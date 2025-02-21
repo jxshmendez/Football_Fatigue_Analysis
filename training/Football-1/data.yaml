@@ -1,0 +1,13 @@
+train: /Users/joshmendez/Library/Mobile Documents/com~apple~CloudDocs/Dissertation/football_analysis_draft/training/Football-1/Football-1/train/images
+val: /Users/joshmendez/Library/Mobile Documents/com~apple~CloudDocs/Dissertation/football_analysis_draft/training/Football-1/Football-1/valid/images
+test: /Users/joshmendez/Library/Mobile Documents/com~apple~CloudDocs/Dissertation/football_analysis_draft/training/Football-1/Football-1/test/images
+
+nc: 7
+names: ['0', '1', '2', 'Referee', 'Ball', 'Goalkeeper', 'Player']
+
+roboflow:
+  workspace: centralesuplec-hwbh4
+  project: football-tqnc9
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/centralesuplec-hwbh4/football-tqnc9/dataset/1
