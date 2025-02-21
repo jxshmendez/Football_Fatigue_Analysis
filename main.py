@@ -9,14 +9,32 @@ from camera_transform import CameraTransform
 from speedDistance_estimator import SpeedDistanceEstimator
 from track_merger import merge_player_tracks
 from simulate_speed_history import simulate_speed_history
+from PlayerPerformanceVisualiser import PlayerPerformanceVisualizer
+from ultralytics import YOLO
 import time
+import torch
+import torch_directml
+import onnxruntime as ort
 
-def process_footage():
+
+def process_footage(video_path, output_path):
     start_time = time.time()
     print("Processing started...")
-    
+    device = torch_directml.device()
+    print("Using DirectML device:", device)
+
+    # Move YOLO model to DirectML device
+    model = YOLO("models/best.pt")
+    model.export(format="onnx", opset=12, half=True)
+    model.to(device)
+    session = ort.InferenceSession("models/best.onnx", providers=["DmlExecutionProvider"])
+    print("ONNXRuntime Execution Provider:", session.get_providers())
+    # Check if DirectML is working
+    print("Available devices:", torch.cuda.device_count())  # Should be at least 1 if working
+    print("Current device:", device)
     # Read frames from the video
-    frames = load_video('inputVid/5sec.mp4')
+    frames = load_video(video_path)  # ✅ Uses passed parameter
+
     
     # Create a tracker for objects (players, ball, referees)
     main_tracker = ObjectTracker('models/best.pt')
@@ -58,27 +76,7 @@ def process_footage():
     speed_distance_calc = SpeedDistanceEstimator()
     speed_distance_calc.compute_speed_and_distance(track_data)
     
-    # For testing: simulate a longer speed history for player _ if needed
-    # Uncomment the next line to simulate:
-    #print(track_data["players"][0].keys())
-    
-    if 5 not in track_data["players"][0]:
-        track_data["players"][0][5] = {}
-    # set a dummy bounding box if needed. #### change this!!
-    track_data["players"][0][5]["bbox"] = [0, 0, 50, 50]
-    track_data["players"][0][5]["speed_history"] = simulate_speed_history(500, initial_speed=6.0, fatigue_rate=0.005)
-    
-    
-    #for player 6
-    for frame_idx, player_tracks in enumerate(track_data["players"]):
-        if 5 in player_tracks:
-            info = player_tracks[5]
-            if "speed_history" in info and len(info["speed_history"]) > 0:
-                baseline = 6.0  # fixed baseline for testing
-                fatigue = speed_distance_calc.calculate_fatigue_index(info["speed_history"], baseline)
-                info["fatigue_index"] = fatigue
-                print(f"Frame {frame_idx} - Player 5 fatigue index: {fatigue:.2f}")
-    
+      
     # Assign team colors
     team_finder = TeamClassifier()
     team_finder.define_team_colors(frames[0], track_data['players'][0])
@@ -120,7 +118,7 @@ def process_footage():
         annotated[i] = transformer.overlay_src_points(annotated[i])
         
     # Save the final annotated video
-    save_video(annotated, 'outputVid/output_video.mp4')
+    save_video(annotated, output_path)
     
     end_time = time.time()
     total_time = end_time - start_time
@@ -128,4 +126,5 @@ def process_footage():
     
 if __name__ == '__main__':
     process_footage()
-
+    visualizer = PlayerPerformanceVisualizer("outputVid/player_5_speed_distance.csv")
+    visualizer.plot_all()  # Call this to plot all graphs at once
