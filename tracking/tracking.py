@@ -8,7 +8,7 @@ import cv2
 import sys 
 sys.path.append('../')
 from utilities import compute_bbox_center, compute_bbox_width, compute_foot_position
-
+import torch
 class ObjectTracker:
     def __init__(self, model_file):
         # Initialize YOLO model for object detection
@@ -91,9 +91,9 @@ class ObjectTracker:
 
         for start_idx in range(0, len(input_frames), chunk_size):
             batch = input_frames[start_idx : start_idx + chunk_size]
-            results = self.detector.predict(batch, conf=0.1)
-            predictions.extend(results)
-        
+            results = self.detector.predict([frame.cpu().numpy() for frame in batch], device="mps", conf=0.1)
+            predictions.extend(results)  # Append the results for this batch
+
         return predictions
 
     def retrieve_object_tracks(self, input_frames, use_stub=False, cache_path=None):
@@ -271,12 +271,18 @@ class ObjectTracker:
         return frame
         '''
     
-    def annotate_video_frames(self, frames, all_tracks): #ball_ownership add to param to use ball possession annotations
+    def annotate_video_frames(self, frames, all_tracks):  # ball_ownership add to param to use ball possession annotations
         # holds the final annotated frames
         annotated_frames = []
 
         # loop through each frame
         for idx, original_frame in enumerate(frames):
+            # Convert to NumPy array if it's a torch.Tensor
+            if isinstance(original_frame, torch.Tensor):
+                original_frame = original_frame.cpu().numpy()
+                # Optionally ensure contiguous memory:
+                original_frame = np.ascontiguousarray(original_frame)
+            
             frame_copy = original_frame.copy()
 
             # get the player, ball, and referee tracks for this frame
@@ -290,7 +296,6 @@ class ObjectTracker:
                 team_color = player_data.get("team_color", (0, 0, 255))
                 frame_copy = self.draw_ellipse_on_frame(frame_copy, player_data["bbox"], team_color, custom_id)
 
-                
                 # draw triangle if player has the ball
                 if player_data.get('has_ball', False):
                     frame_copy = self.draw_triangle_on_frame(frame_copy, player_data["bbox"], (0, 0, 255))
@@ -303,13 +308,11 @@ class ObjectTracker:
             for ball_id, ball_data in ball_here.items():
                 frame_copy = self.draw_triangle_on_frame(frame_copy, ball_data["bbox"], (0, 255, 0))
 
-            # draw ball control info
-            #frame_copy = self.draw_ball_control_info(frame_copy, idx, ball_ownership)
-
             # add the annotated frame to the list
             annotated_frames.append(frame_copy)
 
         return annotated_frames
+
 
 
 

@@ -1,0 +1,3 @@
+file '/Users/joshmendez/Library/Mobile Documents/com~apple~CloudDocs/Dissertation/football_analysis_draft/outputVid/processed/segment_000.mp4'
+file '/Users/joshmendez/Library/Mobile Documents/com~apple~CloudDocs/Dissertation/football_analysis_draft/outputVid/processed/segment_001.mp4'
+file '/Users/joshmendez/Library/Mobile Documents/com~apple~CloudDocs/Dissertation/football_analysis_draft/outputVid/processed/segment_002.mp4'

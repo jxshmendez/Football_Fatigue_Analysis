@@ -1,5 +1,5 @@
 from sklearn.cluster import KMeans
-
+import torch
 class TeamClassifier:
     def __init__(self):
         # stores cluster centers for two teams
@@ -7,13 +7,20 @@ class TeamClassifier:
         # keeps track of player ID to team mappings
         self.player_team_map = {}
 
-    def create_kmeans_model(self, img):
-        # reshape image to a 2D array of pixels
-        reshaped_img = img.reshape(-1, 3)
-        # initialize KMeans with 2 clusters
-        model = KMeans(n_clusters=2, init="k-means++", n_init=1)
-        model.fit(reshaped_img)
+    def create_kmeans_model(self, upper_seg):
+        # Convert upper_seg to a NumPy array if it's a tensor
+        if isinstance(upper_seg, torch.Tensor):
+            upper_seg = upper_seg.cpu().numpy()
+        
+        # Now reshape the image to a 2D array for KMeans
+        reshaped_img = upper_seg.reshape(-1, 3)
+        
+        # Create and return your KMeans model, for example:
+        from sklearn.cluster import KMeans
+        model = KMeans(n_clusters=2, random_state=0)
+        model.fit(reshaped_img)  # This should now work without error.
         return model
+
 
     def extract_player_color(self, frame, bbox):
         # crop the player from the frame

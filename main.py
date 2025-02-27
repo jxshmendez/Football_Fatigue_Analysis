@@ -13,39 +13,41 @@ from PlayerPerformanceVisualiser import PlayerPerformanceVisualizer
 from ultralytics import YOLO
 import time
 import torch
-import torch_directml
 import onnxruntime as ort
 
-
-def process_footage(video_path, output_path):
+def process_footage(input_video, output_path, use_stub=True, stub_path="stubs/track_stubs.pkl"):
     start_time = time.time()
     print("Processing started...")
-    device = torch_directml.device()
-    print("Using DirectML device:", device)
 
-    # Move YOLO model to DirectML device
-    model = YOLO("models/best.pt")
-    model.export(format="onnx", opset=12, half=True)
+    device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+    print("Using device:", device)
+
+    # Model setup code remains the same...
+    model = YOLO("models/best.pt").to("mps")
+    model.export(format="onnx", opset=12)
     model.to(device)
-    session = ort.InferenceSession("models/best.onnx", providers=["DmlExecutionProvider"])
+    session = ort.InferenceSession(
+        "models/best.onnx",
+        providers=["CoreMLExecutionProvider", "CPUExecutionProvider"],
+    )
     print("ONNXRuntime Execution Provider:", session.get_providers())
-    # Check if DirectML is working
-    print("Available devices:", torch.cuda.device_count())  # Should be at least 1 if working
+    print("Available devices:", torch.cuda.device_count())
     print("Current device:", device)
-    # Read frames from the video
-    frames = load_video(video_path)  # ✅ Uses passed parameter
+    print("MPS Available:", torch.backends.mps.is_available())
 
-    
-    # Create a tracker for objects (players, ball, referees)
+    # Read frames from the video
+    frames = [torch.tensor(frame).to("mps") for frame in load_video(input_video)]
+
+    # Create a tracker for objects
     main_tracker = ObjectTracker('models/best.pt')
-    
-    # Retrieve track info from cache or by running detection
+
+    # Retrieve track info (using the stub only if use_stub is True)
     track_data = main_tracker.retrieve_object_tracks(
         frames,
-        use_stub=True,
-        cache_path='stubs/track_stubs.pkl'
+        use_stub=use_stub,
+        cache_path=stub_path
     )
-    
+
     # Insert positional data (e.g., foot positions) into each track
     main_tracker.assign_positions(track_data)
     
@@ -73,20 +75,28 @@ def process_footage(video_path, output_path):
     # track_data["players"] = main_tracker.player_trajectory(track_data["players"]) #player smoothing test code
     
     # Compute speed and distance for players
+    # Compute speed and distance for players
     speed_distance_calc = SpeedDistanceEstimator()
     speed_distance_calc.compute_speed_and_distance(track_data)
-    
-      
-    # Assign team colors
-    team_finder = TeamClassifier()
-    team_finder.define_team_colors(frames[0], track_data['players'][0])
-    
-    # Loop through frames and assign teams
-    for idx, player_info in enumerate(track_data['players']):
-        for pid, record in player_info.items():
-            team_label = team_finder.classify_player_team(frames[idx], record['bbox'], pid)
-            track_data['players'][idx][pid]['team'] = team_label
-            track_data['players'][idx][pid]['team_color'] = team_finder.team_centers[team_label]
+
+    # Assign team colors (only if player tracks exist)
+    if 'players' in track_data and len(track_data['players']) > 0 and len(track_data['players'][0]) > 0:
+        team_finder = TeamClassifier()
+        team_finder.define_team_colors(frames[0], track_data['players'][0])
+        # Loop only up to the minimum number of frames between frames and track_data
+        min_frames = min(len(frames), len(track_data['players']))
+        for idx in range(min_frames):
+            player_info = track_data['players'][idx]
+            for pid, record in player_info.items():
+                # Make sure the frame index exists
+                if idx < len(frames):
+                    team_label = team_finder.classify_player_team(frames[idx], record['bbox'], pid)
+                    track_data['players'][idx][pid]['team'] = team_label
+                    track_data['players'][idx][pid]['team_color'] = team_finder.team_centers[team_label]
+    else:
+        print("No player tracks found; skipping team color assignment.")
+
+
             
     # Determine ball possession
     ball_assigner = BallAssigner()
@@ -125,6 +135,11 @@ def process_footage(video_path, output_path):
     print(f"Processing completed in {total_time:.2f} seconds ({total_time / 60:.2f} minutes)")
     
 if __name__ == '__main__':
-    process_footage()
+    input_video = "inputVid/1min30.mp4"  # Change this to your actual input video path
+    output_video = "outputVid/processed_video.mp4"  # Change this to your desired output path
+
+    process_footage(input_video, output_video)
+    
     visualizer = PlayerPerformanceVisualizer("outputVid/player_5_speed_distance.csv")
-    visualizer.plot_all()  # Call this to plot all graphs at once
+    visualizer.plot_all()
+
