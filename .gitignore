@@ -1,6 +1,15 @@
 
 __pycache__/
 *.pyc
-*.mp4
+*.pyo
+*.pyd
+
+*.onnx
 *.pt
+
+*.mp4
+
 .DS_Store
+
+*.log
+*.tmp
