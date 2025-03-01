@@ -9,9 +9,9 @@ def segment_video(input_path, segment_length=30):
         "-reset_timestamps", "1",
         "-f", "segment",
         "-segment_time", str(segment_length),
-        "outputVid/segment_%03d.mp4"
+        "inputVid/segments/segment_%03d.mp4"
     ]
     subprocess.run(cmd, check=True)
 
 # Example usage:
-segment_video("inputVid/1min30.mp4", segment_length=30)
+segment_video("inputVid/FirstHalf.mp4", segment_length=30)

@@ -41,8 +41,8 @@ class TeamClassifier:
         jersey_cluster = 1 - background_cluster
 
         # extract that cluster’s color
-        jersey_color = model.cluster_centers_[jersey_cluster]
-        return jersey_color
+        jersey_colour = model.cluster_centers_[jersey_cluster]
+        return jersey_colour
 
     def define_team_colors(self, frame, player_detections):
         # gather colors for all players
@@ -59,19 +59,14 @@ class TeamClassifier:
         self.model = model
         self.team_centers[1] = model.cluster_centers_[0]
         self.team_centers[2] = model.cluster_centers_[1]
-
+        
     def classify_player_team(self, frame, bbox, player_id):
         # if player ID is already assigned, just return it
         if player_id in self.player_team_map:
             return self.player_team_map[player_id]
-
         # extract the color for this player's jersey
-        jersey_color = self.extract_player_color(frame, bbox)
-        predicted_team = self.model.predict(jersey_color.reshape(1, -1))[0] + 1
-
-        # arbitrary condition for a specific ID
-        if player_id == 91:
-            predicted_team = 1
-
+        jersey_colour = self.extract_player_color(frame, bbox)
+        predicted_team = self.model.predict(jersey_colour.reshape(1, -1))[0] + 1
+        
         self.player_team_map[player_id] = predicted_team
         return predicted_team

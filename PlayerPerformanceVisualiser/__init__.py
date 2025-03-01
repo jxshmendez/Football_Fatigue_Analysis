@@ -1,1 +1,2 @@
-from .playerPerformanceVisualiser import PlayerPerformanceVisualizer
+from PlayerPerformanceVisualiser.team_Performance_Visualiser import team_Performance_Visualiser
+from PlayerPerformanceVisualiser.playerPerformanceVisualiser import PlayerPerformanceVisualiser

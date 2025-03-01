@@ -138,7 +138,7 @@ class CameraMovement:
                 pickle.dump(camera_shifts, f)
 
         return camera_shifts
-
+''''
     def overlay_camera_motion(self, frames, motion_per_frame):
         # Create annotated frames with overlaid camera motion information
         result_frames = []
@@ -155,3 +155,4 @@ class CameraMovement:
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 3)
             result_frames.append(frame_copy)
         return result_frames
+'''

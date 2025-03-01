@@ -20,7 +20,7 @@ class CameraTransform:
             [0, pitch_width],
             [0, 0],
             [pitch_length, 0],
-            [pitch_length,  pitch_width]
+            [pitch_length, pitch_width]
         ], dtype=np.float32)
 
         # compute perspective transform matrix
@@ -54,24 +54,3 @@ class CameraTransform:
 
                     # store the transformed position
                     tracks[obj_type][frame_idx][track_id]['position_transformed'] = transformed_pt
-
-    def overlay_src_points(self, frame):
-        """
-        Draws the source points and connecting lines on the given frame.
-        This overlay helps you visualize which region of the original image
-        is being used for the perspective transformation.
-        """
-        # Create a copy so as not to alter the original frame
-        output = frame.copy()
-
-        # Convert source points to integer values
-        pts = self.src_points.astype(np.int32)
-
-        # Draw circles at each source point (red circles)
-        for pt in pts:
-            cv2.circle(output, tuple(pt), 5, (0, 0, 255), -1)
-
-        # Draw a closed polygon connecting the source points (green lines)
-        cv2.polylines(output, [pts], isClosed=True, color=(255, 0, 127), thickness=3)
-
-        return output

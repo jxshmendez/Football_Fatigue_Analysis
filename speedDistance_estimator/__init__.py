@@ -1,1 +1,1 @@
-from .speedDistance_estimator import SpeedDistanceEstimator
+from .speedDistance_estimator import SpeedDistanceEstimator, SpeedDistanceEstimatorExtended
