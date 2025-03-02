@@ -3,20 +3,26 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 class PlayerPerformanceVisualiser:
-    def __init__(self, file_path, output_dir="outputVid"):
-        """Initialize with the CSV file path and output directory."""
+    def __init__(self, file_path, output_dir="outputVid", player_id=5):
+        """Initialize with the CSV file path, output directory, and target player ID."""
         self.file_path = file_path
         self.output_dir = output_dir
-        os.makedirs(self.output_dir, exist_ok=True)  # Ensure output directory exists
-
+        self.player_id = player_id
+        os.makedirs(self.output_dir, exist_ok=True)
+        
         try:
             self.df = pd.read_csv(file_path)
             if self.df.empty:
                 print(f"Warning: The CSV file {file_path} is empty.")
+            else:
+                if "Player ID" in self.df.columns:
+                    self.df = self.df[self.df["Player ID"] == self.player_id]
+                    if self.df.empty:
+                        print(f"Warning: No data found for Player {self.player_id}.")
         except Exception as e:
             print(f"Error reading CSV file {file_path}: {e}")
             self.df = pd.DataFrame()
-
+            
     def plot_speed(self, save=True):
         """Plot Speed Over Time and Save if Required."""
         if self.df.empty:
